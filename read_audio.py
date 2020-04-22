@@ -39,6 +39,19 @@ def dump_mels(dir, mels, metadata):
         np.save(filepath, mels[i])
 
 
+def read_postnet_mels_and_tags(path, metadata, run_type):
+    mels = []
+
+    with open(metadata, 'r') as metafile:
+        entries = [entry.split('\t')[0] for entry in metafile]
+        metafile.close()
+
+    for file in entries:
+        m = np.load(path+'/'+run_type+'_'+file+'.npy')
+        mels.append(m)
+
+    return mels, entries
+
 
 def read_mels(path, metadata):
     import numpy as np
