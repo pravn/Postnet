@@ -81,10 +81,20 @@ def plot_loss(train_loss, tag, params):
     plt.plot(train_loss, 'k')
     #plt.plot(cycle_loss, 'b')
 
-    if params.is_notebook:
-        plt.show()
-
-    if not params.is_notebook:
-        plt.savefig('./'+tag+'_loss.png')
-        
+    plt.savefig('./'+tag+'_loss.png')
     plt.close()
+
+
+def write_image(image,tag,params):
+    import numpy as np
+    import matplotlib.pyplot as plt
+    from matplotlib.pyplot import figure
+    figure(num=None, figsize=(6, 6), dpi=80, facecolor='w', edgecolor='k')
+    plt.imshow(image,origin='lower')
+
+    if not os.path.exists(params.plots_dir):
+        os.makedirs(params.plots_dir)
+
+    plt.savefig(params.plots_dir+'/mel_'+tag+'.png')
+    plt.close()
+    

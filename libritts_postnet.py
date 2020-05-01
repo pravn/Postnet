@@ -27,7 +27,7 @@ from dataset import PostnetDataset
 
 #from melLM import Encoder
 
-from model import get_postnet
+from model import get_unet_generator
 from model import get_discriminator
 from train import run_trainer
 
@@ -40,6 +40,7 @@ import torch.optim as optim
 # In[ ]:
 
 
+"""
 class Params:
     def __init__(self):
         self.input_size = 80
@@ -52,16 +53,32 @@ class Params:
         self.max_tgt_length = 501
         self.is_notebook = False
         self.plots_dir = './plots'
-        self.run_name = 'libritts'
+        self.run_name = 'libritts
+"""
         
 
-
-# In[ ]:
-
-
-os.getcwd()
-#from main_mel_seq2seq import get_encoder, get_decoder
-
+class Params:
+    def __init__(self):
+        self.batch_size = 32
+        self.num_epochs = 50
+        self.LAMBDA = 0.01
+        self.lr= 0.0002
+        self.nc = 1
+        self.nz = 100
+        self.ngf = 64
+        self.ndf = 64
+        #for unet 
+        self.nc_out = 1
+        self.num_downsample = 4
+        self.dataroot = '/home/praveen/projects/Speech/postnet_experiments/Postnet/speech_scripts/single_npy_dumps'
+        self.metadata_dir = self.dataroot
+        self.plots_dir = './plots'
+        self.run_name = 'libritts'
+        self.workers = 1
+        self.restart_file = ''
+        self.save_epoch=5
+        self.cuda = True
+        self.beta1 = 0.5
 
 # In[ ]:
 
@@ -69,35 +86,21 @@ os.getcwd()
 params = Params()
 
 
-mels_dir = './libritts/mels'
-
-metadata_train = './libritts/train.txt'
-metadata_test = './libritts/test.txt'
-
-sv_train, tags_train = read_postnet_mels_and_tags(mels_dir, metadata_train, 'recon')
-tv_train, _ = read_postnet_mels_and_tags(mels_dir, metadata_train, 'target')
-sv_test, tags_test = read_postnet_mels_and_tags(mels_dir, metadata_test, 'recon')
-tv_test, _ = read_postnet_mels_and_tags(mels_dir, metadata_test, 'target')
+data_path = os.path.join(params.dataroot, 'train')
+metadata_file = os.path.join(params.metadata_dir,'train.txt')
 
 print('Creating groupings to class mels and associated assets')        
 
-
-mel_dataset_train = PostnetDataset(sv_train, tv_train)
-mel_dataset_test = PostnetDataset(sv_test, tv_test)
+mel_dataset_train = PostnetDataset(data_path, metadata_file)
+#mel_dataset_test = PostnetDataset(sv_test, tv_test)
 
 #create train loader 
 train_loader = DataLoader(mel_dataset_train, batch_size=params.batch_size,shuffle=True,num_workers=1)
-test_loader = DataLoader(mel_dataset_test, batch_size=params.batch_size,shuffle=True,num_workers=1)
-
 
 print('size of train loader', len(train_loader))
-print('size of test loader', len(test_loader))
-
 #print('yes yes')
 
-params = Params()
-
-postnet = get_postnet(params)
+postnet = get_unet_generator(params)
 postnet = postnet.cuda()
 
 disc = get_discriminator(params)
@@ -108,4 +111,4 @@ print(params.batch_size)
 postnet_optimizer = optim.Adam(postnet.parameters(), params.lr)
 disc_optimizer = optim.Adam(disc.parameters(), params.lr)
 
-run_trainer(train_loader, test_loader, params, postnet, postnet_optimizer, disc, disc_optimizer)
+run_trainer(train_loader, postnet, disc, params)

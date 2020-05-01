@@ -15,37 +15,72 @@ from os.path import isfile,join
 import re
 import pickle
 
-class Mel:
-    def __init__(self,mel):
-        self.mel = mel
-        self.num_bins = mel.shape[0]
-        self.seq_len  = mel.shape[1]
+def random_crop(source, target, cropsize=64):
+    width = source.shape[0]
+    height = source.shape[1]
+    
+    j = np.random.randint(width)
+    i = np.random.randint(height)
 
+        
+    while (j+cropsize//2>width) or (j-cropsize//2<0):
+        #print(j+cropsize,j-cropsize)
+        j = np.random.randint(width)
+        
+    #print('end j',j)
+    
+    jplus = j+cropsize//2
+    jminus = j-cropsize//2
+        
+    while (i+cropsize//2>height) or (i-cropsize//2<0):
+        #print(i+cropsize,i-cropsize)
+        i = np.random.randint(height)
+        
+    #print('end i', i)
+    
+    iplus = i+cropsize//2
+    iminus = i-cropsize//2
+        
+    #print(jminus,jplus,iminus,iplus)
+    
+    cropped_source = source[jminus:jplus,iminus:iplus]
+    cropped_target = target[jminus:jplus,iminus:iplus]
+    
+    
+    return cropped_source, cropped_target
 
-def zero_pad_end(mels):
-    num_samples = len(mels)
-
-    maxlen = 0
-    for i in range(len(mels)):
-        if(maxlen<mels[i].shape[1]):
-            maxlen = mels[i].shape[1]
-
-    #pad to maxlen
-    for i in range(len(mels)):
-        mels[i,:,:maxlen] = 0
-
+    
+def get_mels(path,metadata_file):
+    import os 
+    source = []
+    target = []
+    
+    with open(metadata_file,'r') as metafile:
+        entries = [entry.split('\n')[0] for entry in metafile]
+    metafile.close()
+    
+    for file in entries:
+        src_file = np.load(os.path.join(path,'recon_'+file+'.npy'))
+        tgt_file = np.load(os.path.join(path,'target_'+file+'.npy'))
+        
+        cropped_src, cropped_tgt = random_crop(src_file,tgt_file)
+        
+        source.append(cropped_src)
+        target.append(cropped_tgt)
+        
+    return source, target
+    
 
 
 class PostnetDataset(Dataset):
-    def __init__(self, source_mels, target_mels):
-        self.source_mels = source_mels
-        self.target_mels = target_mels
+    def __init__(self, data_path, metadata_file):
+        self.source_mels, self.target_mels = get_mels(data_path, metadata_file)
+
 
     def __len__(self):
         return len(self.source_mels)
 
     def __getitem__(self, idx):
-        sample = {'source':self.source_mels[idx], 'target': self.target_mels[idx]}
-        return sample
+        return self.source_mels[idx], self.target_mels[idx]
         
     
