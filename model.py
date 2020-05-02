@@ -81,9 +81,9 @@ class convBlock(nn.Module):
         super(convBlock, self).__init__()
         model = []
         model += [nn.Conv2d(inplanes, outplanes, kernel, stride, padding, bias=False)]
-        #model += [nn.BatchNorm2d(outplanes)]
-        #model += [nn.LeakyReLU(0.2, inplace=True)]
-        model += [nn.SELU(inplace=True)]
+        model += [nn.BatchNorm2d(outplanes)]
+        model += [nn.LeakyReLU(0.2, inplace=True)]
+        #model += [nn.SELU(inplace=True)]
 
         self.model = nn.Sequential(*model)
 

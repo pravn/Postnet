@@ -89,7 +89,7 @@ def write_image(image,tag,params):
     import numpy as np
     import matplotlib.pyplot as plt
     from matplotlib.pyplot import figure
-    figure(num=None, figsize=(6, 6), dpi=80, facecolor='w', edgecolor='k')
+    figure(num=None, figsize=(4, 4), dpi=80, facecolor='w', edgecolor='k')
     plt.imshow(image,origin='lower')
 
     if not os.path.exists(params.plots_dir):

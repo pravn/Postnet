@@ -20,9 +20,9 @@ import re
 import pickle
 import random
 
-criterion_L1=nn.L1Loss(reduction='sum')
-criterion_L2 = nn.MSELoss(reduction='sum')
-criterion_BCE = nn.BCELoss()
+criterion_L1=nn.L1Loss(reduction='mean')
+criterion_L2 = nn.MSELoss(reduction='mean')
+criterion_BCE = nn.BCELoss(reduction='mean')
 
 
 def L1Loss(input,target):
@@ -31,6 +31,10 @@ def L1Loss(input,target):
 
 def L2Loss(input,target):
     L = criterion_L2(input, target)
+    return L
+
+def BCELoss(input,label):
+    L = criterion_BCE(input, label)
     return L
 
 
@@ -72,23 +76,28 @@ def train(train_loader,params,postnet,
 
         label = torch.full((batch_size,), real_label, device=device)
 
+        '''
         for p in postnet.parameters():
             p.requires_grad = True
         
         for p in disc.parameters():
             p.requires_grad = False
+        '''
 
         postnet_optimizer.zero_grad()
 
         fake = postnet(src)
         
         d_fake, feats_fake = disc(fake)
-        d_tgt, feats_tgt = disc(tgt)
+        D_fake_G = d_fake.mean().item()
+        
 
-        postnet_loss = L1Loss(fake,tgt)
-        gan_postnet_loss = params.LAMBDA*L2Loss(feats_fake, feats_tgt)
+        postnet_loss = params.lambda_L1*L1Loss(fake,tgt)
+        label.fill_(real_label)
+        gan_postnet_loss = BCELoss(d_fake, label)
 
         postnet_loss.backward(retain_graph=True)
+        #postnet_loss.backward()
         gan_postnet_loss.backward(retain_graph=True)
 
         postnet_optimizer.step()
@@ -97,28 +106,40 @@ def train(train_loader,params,postnet,
 
         #=====================================
 
+
+        '''
         for p in postnet.parameters():
             p.requires_grad = False
 
         for p in disc.parameters():
             p.requires_grad = True
+        '''
 
+        disc_optimizer.zero_grad()
+        
+            
         d_real, _ = disc(tgt)
         label.fill_(real_label)
 
+        D_real_D = d_real.mean().item()
+
         #print('d_real.size(),label.size()', d_real.size(),label.size())
 
-        d_loss_real = L2Loss(d_real, label)
+        d_loss_real = BCELoss(d_real, label)
         d_loss_real.backward(retain_graph=True)
 
         fake = postnet(src)
         d_fake, _ = disc(fake.detach())
+
+        D_fake_D = d_fake.mean().item()
+        
         label.fill_(fake_label)
 
-        d_loss_fake = L2Loss(d_fake, label)
+        d_loss_fake = BCELoss(d_fake, label)
         d_loss_fake.backward(retain_graph=True)
 
-        disc_optimizer.step()
+        disc_optimizer.step() 
+        
 
         fake = fake.squeeze(1)
         tgt = tgt.squeeze(1)
@@ -132,6 +153,12 @@ def train(train_loader,params,postnet,
 
             print('postnet_loss:%.4f\tgan_postnet_loss:%.4f\td_loss_real:%.4f\td_loss_fake:%.4f'
                   %(postnet_loss.item(),gan_postnet_loss.item(),d_loss_real.item(),d_loss_fake.item()))
+
+            print('xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx')
+            
+            print('D_fake_G:%.4f, D_real_D:%.4f, D_fake_D:%.4f'%(D_fake_G, D_real_D, D_fake_D))
+
+
     print('train_loss', train_loss)
     
     return train_loss
@@ -160,7 +187,7 @@ def run_trainer(train_loader, postnet, disc, params):
     if restart_file!='':
         print('loading postnet, discriminator')
         postnet.load_state_dict(torch.load(dump_dir+'/postnet_epoch_'+restart_file+'.pth'))
-        disc_optimizer.load_state_dict(torch.load(dump_dir+'/disc_epoch_'+restart_file+'.pth'))
+        disc.load_state_dict(torch.load(dump_dir+'/disc_epoch_'+restart_file+'.pth'))
 
     num_epochs = params.num_epochs
 

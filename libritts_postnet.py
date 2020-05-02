@@ -59,10 +59,10 @@ class Params:
 
 class Params:
     def __init__(self):
-        self.batch_size = 32
-        self.num_epochs = 50
-        self.LAMBDA = 0.01
-        self.lr= 0.0002
+        self.batch_size = 64
+        self.num_epochs = 500
+        self.lr_G= 0.0002
+        self.lr_D = 0.0002
         self.nc = 1
         self.nz = 100
         self.ngf = 64
@@ -75,9 +75,10 @@ class Params:
         self.plots_dir = './plots'
         self.run_name = 'libritts'
         self.workers = 1
-        self.restart_file = ''
+        self.restart_file = '45'
         self.save_epoch=5
         self.cuda = True
+        self.lambda_L1 = 100
         self.beta1 = 0.5
 
 # In[ ]:
@@ -108,7 +109,7 @@ disc = disc.cuda()
 
 print(params.batch_size)
 
-postnet_optimizer = optim.Adam(postnet.parameters(), params.lr)
-disc_optimizer = optim.Adam(disc.parameters(), params.lr)
+postnet_optimizer = optim.Adam(postnet.parameters(), params.lr_G)
+disc_optimizer = optim.Adam(disc.parameters(), params.lr_D)
 
 run_trainer(train_loader, postnet, disc, params)

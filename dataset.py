@@ -49,6 +49,13 @@ def random_crop(source, target, cropsize=64):
     
     return cropped_source, cropped_target
 
+def normalize(x):
+    min_x = x.min()
+    max_x = x.max()
+
+    y = 1.0-2.0*(max_x-x)/(max_x-min_x+1)
+
+    return y
     
 def get_mels(path,metadata_file):
     import os 
@@ -62,8 +69,15 @@ def get_mels(path,metadata_file):
     for file in entries:
         src_file = np.load(os.path.join(path,'recon_'+file+'.npy'))
         tgt_file = np.load(os.path.join(path,'target_'+file+'.npy'))
-        
+
         cropped_src, cropped_tgt = random_crop(src_file,tgt_file)
+        while(cropped_src.max()<0.1):
+            cropped_src, cropped_tgt = random_crop(src_file,tgt_file)
+
+
+        cropped_src = normalize(cropped_src)
+        cropped_tgt = normalize(cropped_tgt)
+        
         
         source.append(cropped_src)
         target.append(cropped_tgt)
