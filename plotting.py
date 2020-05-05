@@ -111,3 +111,16 @@ def write_test_image(image,tag,params):
     plt.savefig(params.test_plots_dir+'/mel_'+tag+'.png')
     plt.close()
 
+def write_inference_image(image,tag,params):
+    import numpy as np
+    import matplotlib.pyplot as plt
+    from matplotlib.pyplot import figure
+    figure(num=None, figsize=(4, 4), dpi=80, facecolor='w', edgecolor='k')
+    plt.imshow(image,origin='lower')
+
+    if not os.path.exists(params.inference_plots_dir):
+        os.makedirs(params.inference_plots_dir)
+
+    plt.savefig(params.inference_plots_dir+'/mel_'+tag+'.png')
+    plt.close()
+
