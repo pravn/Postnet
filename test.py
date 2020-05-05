@@ -18,42 +18,45 @@ import re
 import pickle
 import random
 
-from train import L2Loss
+from train import L1Loss
 
 def test(test_loader, params, postnet, epoch):
     from plotting import plot_mel
-    from plotting import plot_loss
+    from plotting import write_test_image
 
     test_loss = 0
     j = 0
+
+    device = torch.device("cuda:0")
     
-    for i, sample in enumerate(test_loader):
+    for i, (src,tgt) in enumerate(test_loader):
 
         j+=1
 
         if (j==len(test_loader)):
             break
 
-        src = sample['source']
-        tgt = sample['target']
-
-        src = Variable(src.float()).cuda()
-
-        src = src.transpose(1,2)
-        tgt = tgt.transpose(1,2)
+        src = Variable(src).cuda()
+        src = src.unsqueeze(1)
 
         tgt = Variable(tgt).cuda()
+        tgt = tgt.unsqueeze(1)
 
-        postnet_output = postnet(src)
-        postnet_residual = L2Loss(postnet_output, tgt)
+        fake = postnet(src)
+        postnet_loss = params.lambda_L1*L1Loss(fake, tgt)
 
-        test_loss += postnet_residual.item()
+        test_loss += postnet_loss.item()
+
+        fake = fake.squeeze(1)
+        tgt = tgt.squeeze(1)
+        src = src.squeeze(1)
 
         #plot things
+        plots_dir = params.test_plots_dir
         if(j==1):
-            plot_mel(postnet_output[1].data.cpu().numpy(), 'recon_test_'+str(epoch), params)
-            plot_mel(tgt[1].data.cpu().numpy(), 'target_test_'+str(epoch), params)
-            plot_mel(src[1].data.cpu().numpy(), 'source_test_'+str(epoch), params)
+            write_test_image(fake[1].data.cpu().numpy().T, 'fake_test_'+str(epoch), params)
+            write_test_image(tgt[1].data.cpu().numpy().T, 'target_test_'+str(epoch), params)
+            write_test_image(src[1].data.cpu().numpy().T, 'source_test_'+str(epoch), params)
     
 
     print('test_loss', test_loss)

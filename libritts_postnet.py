@@ -60,7 +60,7 @@ class Params:
 class Params:
     def __init__(self):
         self.batch_size = 64
-        self.num_epochs = 500
+        self.num_epochs = 1
         self.lr_G= 0.0002
         self.lr_D = 0.0002
         self.nc = 1
@@ -73,9 +73,10 @@ class Params:
         self.dataroot = '/home/praveen/projects/Speech/postnet_experiments/Postnet/speech_scripts/single_npy_dumps'
         self.metadata_dir = self.dataroot
         self.plots_dir = './plots'
+        self.test_plots_dir = './plots/test'
         self.run_name = 'libritts'
         self.workers = 1
-        self.restart_file = '45'
+        self.restart_file = '130'
         self.save_epoch=5
         self.cuda = True
         self.lambda_L1 = 100
@@ -87,18 +88,24 @@ class Params:
 params = Params()
 
 
-data_path = os.path.join(params.dataroot, 'train')
-metadata_file = os.path.join(params.metadata_dir,'train.txt')
+data_path_train = os.path.join(params.dataroot, 'train')
+metadata_file_train = os.path.join(params.metadata_dir,'train.txt')
+
+data_path_test = os.path.join(params.dataroot, 'train')
+metadata_file_test = os.path.join(params.metadata_dir, 'test.txt')
 
 print('Creating groupings to class mels and associated assets')        
 
-mel_dataset_train = PostnetDataset(data_path, metadata_file)
-#mel_dataset_test = PostnetDataset(sv_test, tv_test)
+mel_dataset_train = PostnetDataset(data_path_train, metadata_file_train)
+mel_dataset_test = PostnetDataset(data_path_test, metadata_file_test)
 
 #create train loader 
 train_loader = DataLoader(mel_dataset_train, batch_size=params.batch_size,shuffle=True,num_workers=1)
 
+test_loader = DataLoader(mel_dataset_test, batch_size = params.batch_size, shuffle=False,num_workers=1)
+
 print('size of train loader', len(train_loader))
+print('size of test loader', len(test_loader))
 #print('yes yes')
 
 postnet = get_unet_generator(params)
@@ -112,4 +119,4 @@ print(params.batch_size)
 postnet_optimizer = optim.Adam(postnet.parameters(), params.lr_G)
 disc_optimizer = optim.Adam(disc.parameters(), params.lr_D)
 
-run_trainer(train_loader, postnet, disc, params)
+run_trainer(train_loader, test_loader, postnet, disc, params)

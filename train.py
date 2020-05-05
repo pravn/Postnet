@@ -164,7 +164,7 @@ def train(train_loader,params,postnet,
     return train_loss
 
 
-def run_trainer(train_loader, postnet, disc, params):
+def run_trainer(train_loader, test_loader, postnet, disc, params):
     import os
     from plotting import plot_loss
     #from test_attn import run_tester
@@ -202,13 +202,13 @@ def run_trainer(train_loader, postnet, disc, params):
         
         print('epoch',epoch)
         loss = train(train_loader,params,postnet,postnet_optimizer, disc, disc_optimizer, epoch)
-        #test_loss = run_tester(test_loader, params, postnet, epoch)
+        test_loss = run_tester(test_loader, params, postnet, epoch)
 
         loss_array.append(loss)
         plot_loss(loss_array, 'train', params)
 
-        #test_loss_array.append(test_loss)
-        #plot_loss(test_loss_array, 'test', params)
+        test_loss_array.append(test_loss)
+        plot_loss(test_loss_array, 'test', params)
 
         if epoch%params.save_epoch==0:
             print('saving logs for epoch ', epoch)
