@@ -23,7 +23,7 @@ import pickle
 #from read_audio import read_pickles, read_mels_libritts, read_embeds_libritts
 from read_audio import read_postnet_mels_and_tags
 
-from dataset import PostnetDataset
+from dataset import PostnetInferenceDataset
 
 #from melLM import Encoder
 
@@ -65,6 +65,8 @@ class Params:
         self.lr_D = 0.0002
         self.nc = 1
         self.nz = 100
+        self.width = 501
+        self.height = 80
         self.ngf = 64
         self.ndf = 64
         #for unet 
@@ -75,6 +77,7 @@ class Params:
         self.plots_dir = './plots'
         self.test_plots_dir = './plots/test'
         self.inference_plots_dir = './plots/inference'
+        self.samples_dump_dir = 'samples'
         self.run_name = 'libritts'
         self.workers = 1
         self.restart_file = '130'
@@ -94,7 +97,7 @@ metadata_file_inference = os.path.join(params.metadata_dir, 'test.txt')
 
 print('Creating groupings to class mels and associated assets')        
 
-mel_dataset_inference = PostnetDataset(data_path_inference, metadata_file_inference)
+mel_dataset_inference = PostnetInferenceDataset(data_path_inference, metadata_file_inference)
 
 #create train loader 
 inference_loader = DataLoader(mel_dataset_inference, batch_size = params.batch_size, shuffle=False,num_workers=1)

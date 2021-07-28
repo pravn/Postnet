@@ -49,9 +49,22 @@ def random_crop(source, target, cropsize=64):
     
     return cropped_source, cropped_target
 
+def pad_mels(source, target, padded_width=512,padded_height=128):
+    width = source.shape[0]
+    height = source.shape[1]
+    padded_source = np.zeros((padded_width,padded_height))
+    padded_target = np.zeros((padded_width,padded_height))
+
+    padded_source[:width,:height] = source
+    padded_target[:width,:height] = target
+    
+    return padded_source.astype(float), padded_target.astype(float)
+    
+
 def normalize(x):
     min_x = x.min()
-    max_x = x.max()
+    #max_x = x.max()
+    max_x = 0.7
 
     y = 1.0-2.0*(max_x-x)/(max_x-min_x+1)
 
@@ -71,6 +84,8 @@ def get_mels(path,metadata_file):
         tgt_file = np.load(os.path.join(path,'target_'+file+'.npy'))
 
         cropped_src, cropped_tgt = random_crop(src_file,tgt_file)
+
+        #crop until we get max greater than 0.1
         while(cropped_src.max()<0.1):
             cropped_src, cropped_tgt = random_crop(src_file,tgt_file)
 
@@ -83,6 +98,30 @@ def get_mels(path,metadata_file):
         target.append(cropped_tgt)
         
     return source, target
+
+
+def get_padded_mels(path,metadata_file):
+    import os 
+    source = []
+    target = []
+    
+    with open(metadata_file,'r') as metafile:
+        entries = [entry.split('\n')[0] for entry in metafile]
+    metafile.close()
+    
+    for file in entries:
+        src_file = np.load(os.path.join(path,'recon_'+file+'.npy'))
+        tgt_file = np.load(os.path.join(path,'target_'+file+'.npy'))
+
+        padded_src, padded_tgt = pad_mels(src_file,tgt_file)
+
+        padded_src = normalize(padded_src)
+        padded_tgt = normalize(padded_tgt)
+        
+        source.append(padded_src)
+        target.append(padded_tgt)
+        
+    return source, target
     
 
 
@@ -90,11 +129,22 @@ class PostnetDataset(Dataset):
     def __init__(self, data_path, metadata_file):
         self.source_mels, self.target_mels = get_mels(data_path, metadata_file)
 
-
     def __len__(self):
         return len(self.source_mels)
 
     def __getitem__(self, idx):
         return self.source_mels[idx], self.target_mels[idx]
         
+    
+
+class PostnetInferenceDataset(Dataset):
+    def __init__(self, data_path, metadata_file):
+        self.source_mels, self.target_mels = get_padded_mels(data_path, metadata_file)
+
+
+    def __len__(self):
+        return len(self.source_mels)
+
+    def __getitem__(self, idx):
+        return self.source_mels[idx], self.target_mels[idx]
     

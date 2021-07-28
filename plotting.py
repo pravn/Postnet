@@ -115,7 +115,7 @@ def write_inference_image(image,tag,params):
     import numpy as np
     import matplotlib.pyplot as plt
     from matplotlib.pyplot import figure
-    figure(num=None, figsize=(4, 4), dpi=80, facecolor='w', edgecolor='k')
+    figure(num=None, figsize=(50, 8), dpi=80, facecolor='w', edgecolor='k')
     plt.imshow(image,origin='lower')
 
     if not os.path.exists(params.inference_plots_dir):

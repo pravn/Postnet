@@ -19,6 +19,23 @@ import random
 
 from train import L1Loss
 
+def write_samples(src,tgt,fake,params,batch):
+    samples_dir = params.samples_dump_dir
+    batch_size = params.batch_size
+
+    if not os.path.exists(samples_dir):
+        os.makedirs(samples_dir)
+
+    for i in range(batch_size):
+        sample_id = batch+i*batch_size
+        np.save(os.path.join(samples_dir,'source_'+str(sample_id)),src)
+        np.save(os.path.join(samples_dir,'target_'+str(sample_id)),tgt)
+        np.save(os.path.join(samples_dir,'fake_'+str(sample_id)),fake)
+
+    
+                
+    
+
 def inference(inference_loader, params, postnet):
     from plotting import plot_mel
     from plotting import write_inference_image
@@ -35,10 +52,10 @@ def inference(inference_loader, params, postnet):
         if (j==len(inference_loader)):
             break
 
-        src = Variable(src).cuda()
+        src = Variable(src).cuda().float()
         src = src.unsqueeze(1)
 
-        tgt = Variable(tgt).cuda()
+        tgt = Variable(tgt).cuda().float()
         tgt = tgt.unsqueeze(1)
 
         fake = postnet(src)
@@ -50,12 +67,24 @@ def inference(inference_loader, params, postnet):
         tgt = tgt.squeeze(1)
         src = src.squeeze(1)
 
+        fake = fake[:,:params.width,:params.height]
+        tgt = tgt[:,:params.width,:params.height]
+        src = src[:,:params.width,:params.height]
+
         #plot things
         plots_dir = params.inference_plots_dir
+
+        src = src.data.cpu().numpy()
+        tgt = tgt.data.cpu().numpy()
+        fake = fake.data.cpu().numpy()
+        
         if(j==1):
-            write_inference_image(fake[1].data.cpu().numpy().T, 'fake_test_', params)
-            write_inference_image(tgt[1].data.cpu().numpy().T, 'target_test_', params)
-            write_inference_image(src[1].data.cpu().numpy().T, 'source_test_', params)
+            write_inference_image(fake[1].T, 'fake_test_', params)
+            write_inference_image(tgt[1].T, 'target_test_', params)
+            write_inference_image(src[1].T, 'source_test_', params)
+
+
+        write_samples(src,tgt,fake,params,i)
     
 
     print('inference_loss', inference_loss)
